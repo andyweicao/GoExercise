@@ -21,3 +21,26 @@ func FindDuplicates(input []int) (result []int) {
 	}
 	return
 }
+
+func FindDuplicatesVersion2(input []int) (result []int) {
+	dups := make(map[int]bool)
+	for i := range input {
+		var current int
+		if input[i] < 0 {
+			current = -1 * input[i]
+		} else {
+			current = input[i]
+		}
+
+		if input[current] < 0 {
+			dups[current] = true
+		} else {
+			input[current] *= -1
+		}
+	}
+
+	for i := range dups {
+		result = append(result, i)
+	}
+	return
+}

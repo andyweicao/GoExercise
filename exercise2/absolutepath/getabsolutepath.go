@@ -7,14 +7,9 @@ import (
 // Take absolute currentPath and a relative target path.
 // Return absolute target path.
 func GetAbsPath(currentPath, relativePath string) (absPath string) {
-	// Special case: relativePath is "".
-	if len(relativePath) == 0 {
-		absPath = currentPath
-		return
-	}
 	// Special case: currentPath is "" or relativePath is already an absolute path.
-	if len(currentPath) == 0 || string(relativePath[0]) == "/" {
-		absPath = relativePath
+	if len(currentPath) == 0 || (len(relativePath) > 0 && string(relativePath[0]) == "/") {
+		absPath = GetAbsPath(relativePath, "")
 		return
 	}
 
@@ -24,39 +19,43 @@ func GetAbsPath(currentPath, relativePath string) (absPath string) {
 	if string(currentPath[0]) == "/" {
 		currentPath = currentPath[1:]
 	}
-	currentPathArray := strings.Split(currentPath, "/")
-	currentPathArrayLength := len(currentPathArray)
-	relativePathArray := strings.Split(relativePath, "/")
-	// prevCount will count how many "../" in relativePath
-	// stopPostion will represent the index of the first shown directory name in relativePathArray
-	var prevCount int
-	var stopPosition int
-	for i := range relativePathArray {
-		if relativePathArray[i] == ".." {
-			prevCount++
-		} else if relativePathArray[i] == "." {
-			continue
-		} else {
-			stopPosition = i
-			break
-		}
+
+	currentPathArray := make([]string, 0)
+	if len(currentPath) > 0 {
+		currentPathArray = strings.Split(currentPath, "/")
 	}
 
-	// Discard invalid "../" if there are too many of it
-	if prevCount >= currentPathArrayLength {
-		prevCount = currentPathArrayLength
+	relativePathArray := make([]string, 0)
+	if len(relativePath) > 0 {
+		relativePathArray = strings.Split(relativePath, "/")
 	}
 
-	// First, append currentPath part
-	for i := 0; i < currentPathArrayLength-prevCount; i++ {
-		absPath += "/"
-		absPath += currentPathArray[i]
-	}
+	validPathNames := make([]string, 0)
+
+	validPathNames = helper(currentPathArray, validPathNames)
+	validPathNames = helper(relativePathArray, validPathNames)
 
 	// Then, append relativePath part
-	for j := stopPosition; j < len(relativePathArray); j++ {
+	for j := range validPathNames {
 		absPath += "/"
-		absPath += relativePathArray[j]
+		absPath += validPathNames[j]
 	}
 	return
+}
+
+func helper(pathArray, validArray []string) []string {
+	for i := range pathArray {
+		if pathArray[i] == "." {
+			continue
+		} else if pathArray[i] == ".." {
+			if len(validArray) == 0 {
+				continue
+			} else {
+				validArray = validArray[:len(validArray)-1]
+			}
+		} else {
+			validArray = append(validArray, pathArray[i])
+		}
+	}
+	return validArray
 }
